@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+dist
+build
+
+.env
+.env.local
+.env.*.local
+apps/web/.env.local
+
+.vercel
+.DS_Store
+
+solver/.venv
+__pycache__
+*.pyc
