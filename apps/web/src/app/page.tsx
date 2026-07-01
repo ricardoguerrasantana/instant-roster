@@ -7,35 +7,37 @@ export default function HomePage() {
         </p>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
-          Staff satisfaction rostering — live deployment test
+          Rewarding rostering for smarter teams
         </h1>
 
         <p className="mt-4 max-w-2xl text-lg text-gray-700">
-          A rostering platform focused on coverage, availability, preferred
-          hours, overtime preferences, fairness, and staff goal achievement.
+          Plan shifts, match availability, balance workloads, and create
+          rosters that help teams work better.
         </p>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-gray-200 p-5">
-            <h2 className="text-xl font-semibold">Current focus</h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-              <li>Assign people to shifts.</li>
-              <li>Respect availability and skills.</li>
-              <li>Track each person&apos;s target hours.</li>
-              <li>Show goal achievement percentage.</li>
-              <li>Balance overtime preference and fairness.</li>
-            </ul>
+            <h2 className="text-xl font-semibold">Plan</h2>
+            <p className="mt-3 text-gray-700">
+              Build weekly rosters around real shift requirements, team
+              availability, and operational coverage.
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-5">
-            <h2 className="text-xl font-semibold">Not included yet</h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-              <li>Wages.</li>
-              <li>Penalty rates.</li>
-              <li>Allowances.</li>
-              <li>Payroll export.</li>
-              <li>Labour-cost optimisation.</li>
-            </ul>
+            <h2 className="text-xl font-semibold">Balance</h2>
+            <p className="mt-3 text-gray-700">
+              Track preferred hours, workload distribution, overtime
+              preferences, and fairness across the roster.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5">
+            <h2 className="text-xl font-semibold">Adapt</h2>
+            <p className="mt-3 text-gray-700">
+              Respond to changing availability, shift needs, and last-minute
+              roster adjustments with clearer decisions.
+            </p>
           </div>
         </div>
       </section>
