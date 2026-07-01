@@ -7,7 +7,7 @@ export default function HomePage() {
         </p>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
-          Staff satisfaction rostering
+          Staff satisfaction rostering — live deployment test
         </h1>
 
         <p className="mt-4 max-w-2xl text-lg text-gray-700">
