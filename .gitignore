@@ -15,3 +15,7 @@ apps/web/.env.local
 solver/.venv
 __pycache__
 *.pyc
+.env*
+
+.env.local
+.vercel
