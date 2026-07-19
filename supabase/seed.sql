@@ -1,0 +1,1 @@
+-- Add deterministic local development seed data here as the schema evolves.

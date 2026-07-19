@@ -13,6 +13,14 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web",
-    "lint:web": "npm run lint --workspace=apps/web"
+    "lint:web": "npm run lint --workspace=apps/web",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:reset": "supabase db reset",
+    "supabase:migrations": "supabase migration list"
+  },
+  "devDependencies": {
+    "supabase": "^2.109.1"
   }
 }
