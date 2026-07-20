@@ -816,7 +816,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      onboard_organisation: {
+        Args: {
+          organisation_name: string
+          organisation_slug: string
+          organisation_timezone?: string
+          profile_full_name: string
+        }
+        Returns: {
+          name: string
+          organisation_id: string
+          slug: string
+        }[]
+      }
     }
     Enums: {
       availability_type:

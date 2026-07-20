@@ -69,6 +69,9 @@ jobs:
       - name: Rebuild local database
         run: npx supabase db reset --local
 
+      - name: Test database access control
+        run: npx supabase test db
+
       - name: Lint database schema
         run: npx supabase db lint --local --fail-on error
 
@@ -76,7 +79,7 @@ jobs:
         shell: bash
         run: |
           diff_result="$(mktemp)"
-          npx supabase db diff --local --schema public --output-format json > "$diff_result"
+          npx supabase db diff --local --schema public,private --output-format json > "$diff_result"
           node - "$diff_result" <<'NODE'
           const fs = require('node:fs')
 
