@@ -1,10 +1,20 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white p-8 text-gray-950">
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Instant Roster
-        </p>
+        <header className="flex items-center justify-between gap-6">
+          <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Instant Roster
+          </p>
+          <Link
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold transition hover:border-gray-950 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2"
+            href="/login"
+          >
+            Sign in
+          </Link>
+        </header>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
           Rewarding rostering for smarter teams
