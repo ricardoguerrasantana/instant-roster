@@ -18,7 +18,14 @@ export async function signIn(formData: FormData) {
   }
 
   const supabase = await createClient();
-  let failure: "invalid_credentials" | "sign_in_failed" | null = null;
+  let failure:
+    | "invalid_credentials"
+    | "email_not_confirmed"
+    | "user_banned"
+    | "rate_limited"
+    | "auth_unavailable"
+    | "sign_in_failed"
+    | null = null;
 
   try {
     const { error } = await supabase.auth.signInWithPassword({
@@ -27,21 +34,49 @@ export async function signIn(formData: FormData) {
     });
 
     if (error) {
-      failure =
-        error.code === "invalid_credentials"
-          ? "invalid_credentials"
-          : "sign_in_failed";
-    }
-  } catch {
-    failure = "sign_in_failed";
-  }
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          `Supabase sign-in failed (code=${error.code ?? "unknown"}, status=${error.status ?? "unknown"})`,
+        );
+      }
 
-  if (failure === "invalid_credentials") {
-    redirect("/login?error=invalid_credentials");
+      switch (error.code) {
+        case "invalid_credentials":
+          failure = "invalid_credentials";
+          break;
+        case "email_not_confirmed":
+          failure = "email_not_confirmed";
+          break;
+        case "user_banned":
+          failure = "user_banned";
+          break;
+        case "over_request_rate_limit":
+          failure = "rate_limited";
+          break;
+        case "request_timeout":
+        case "unexpected_failure":
+        case "email_provider_disabled":
+          failure = "auth_unavailable";
+          break;
+        default:
+          failure = "sign_in_failed";
+      }
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      const errorName =
+        error instanceof Error ? error.name : "unknown_exception";
+
+      console.error(
+        `Supabase sign-in request failed (name=${errorName})`,
+      );
+    }
+
+    failure = "auth_unavailable";
   }
 
   if (failure) {
-    redirect("/login?error=sign_in_failed");
+    redirect(`/login?error=${failure}`);
   }
 
   redirect("/app");

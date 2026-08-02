@@ -10,6 +10,10 @@ type LoginPageProps = {
 
 const errorMessages: Record<string, string> = {
   invalid_credentials: "The email or password you entered is incorrect.",
+  email_not_confirmed: "Confirm this email address before signing in.",
+  user_banned: "This account is not currently allowed to sign in.",
+  rate_limited: "Too many sign-in attempts. Wait a moment and try again.",
+  auth_unavailable: "The authentication service is not available right now.",
   missing_credentials: "Enter both your email address and password.",
   sign_in_failed: "We could not sign you in right now. Please try again.",
 };
