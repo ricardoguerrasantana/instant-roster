@@ -14,6 +14,8 @@ Instant Roster builds practical, fair rosters around shift coverage, employee av
 
 This npm workspace contains the Next.js web application in `apps/web`. GitHub Actions validates changes, and Vercel deploys the web application from GitHub. Supabase provides the central Postgres backend, with Python and Google OR-Tools supporting roster optimisation.
 
+See the [AI-assisted development workflow](docs/development/AI_WORKFLOW.md).
+
 ## Local Supabase development
 
 Local Supabase services run in Docker-compatible containers. Docker Desktop or OrbStack must be running.
