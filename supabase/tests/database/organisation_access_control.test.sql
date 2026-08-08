@@ -178,12 +178,12 @@ select ok(
 );
 
 select ok(
-  not pg_catalog.has_function_privilege(
+  pg_catalog.has_function_privilege(
     'authenticated',
     'private.has_organisation_role(uuid,text[])',
     'EXECUTE'
   ),
-  'authenticated has no direct role-helper execution privilege yet'
+  'authenticated can execute the role helper used by employee write policies'
 );
 
 set local role anon;
@@ -478,7 +478,6 @@ select is(
     from (
       values
         ('sites'),
-        ('employees'),
         ('skills'),
         ('employee_skills'),
         ('shift_templates'),
@@ -497,7 +496,7 @@ select is(
     )
   ),
   0::bigint,
-  'authenticated has no SELECT grant on any operational table'
+  'authenticated has no SELECT grant on operational tables outside implemented features'
 );
 
 select throws_ok(
