@@ -2,10 +2,11 @@
 
 ## Status
 
-Rules approved. Stage A is implemented, committed locally, validated locally,
-and independently reviewed. Push, pull request, CI and Preview validation,
-merge, hosted migration deployment, and remote migration-history verification
-remain pending. Stage B is not implemented.
+Rules approved. Stage A is independently reviewed, merged, deployed to hosted
+Supabase, and verified. Stage B is implemented, committed locally, validated
+locally, independently reviewed, and product-owner UI tested on
+`feat/employee-application`. Push, pull request, CI, hosted Preview validation,
+merge, and Production verification remain pending.
 
 ## Business problem
 
@@ -468,9 +469,8 @@ The feature is released in two controlled stages because the hosted database pol
 6. Apply the reviewed migration to hosted Supabase.
 7. Confirm local and remote migration histories match.
 
-Stage A is implemented, committed locally, validated locally, and independently
-reviewed. Push, pull request, CI and Preview validation, merge, hosted migration
-deployment, and remote migration-history verification remain pending.
+Stage A is independently reviewed, merged, deployed to hosted Supabase, and its
+remote migration history has been verified.
 
 ### Stage B — Employee application
 
@@ -487,9 +487,17 @@ deployment, and remote migration-history verification remain pending.
 11. Test Preview read-only behaviour.
 12. Review, merge, and verify Production.
 
+Items 1–11 are implemented and validated locally. The application security
+review and repository validation are complete locally. Stage B is committed
+locally, independently reviewed, and product-owner UI tested. Push, pull
+request, CI, hosted Preview validation, merge, and Production verification
+remain pending.
+
 ## Implementation notes
 
-Stage A only is implemented.
+Stage A and the local Stage B application are implemented. Stage B adds no
+database migration and does not change the approved Stage A RLS, grants, or
+business rules.
 
 - Migration and policy design:
   - `public.employees` keeps RLS enabled.
@@ -529,15 +537,56 @@ Stage A only is implemented.
   - Supabase TypeScript types were regenerated from the rebuilt local database.
     Policy, constraint, trigger, and index changes do not alter the public row
     shape, so the generated file has no diff.
-- Stage B is not implemented. There are no employee query modules, validation
-  modules, Server Actions, routes, forms, search/filter UI, navigation changes,
-  or application mutation guards in this change.
-- Preview safeguards remain a Stage B responsibility. This Stage A change adds
-  no application mutation path, so the current Preview application cannot use
-  it to change employees.
-- There are no deviations from the approved Stage A database scope. The
-  quarter-hour business rule is enforced at the database boundary as well as
-  being reserved for future application validation.
+- Stage B server data flow:
+  - Server Components resolve authentication and the active organisation through
+    the existing organisation context, then pass only the trusted organisation ID
+    to the `server-only` employee data layer.
+  - Employee reads use a fresh authenticated server Supabase client, explicit
+    `organisation_id` filters, narrow UI-specific column selections, and RLS as
+    the final boundary. No service role or secret credential is used.
+  - List parameters are normalised to `active`, `inactive`, or `all`; the default
+    is active. Search is bounded to 100 Unicode characters.
+  - Search uses independent parameterised `ilike` queries for name and code.
+    Backslash, percent, and underscore are escaped as literal LIKE input; results
+    are deduplicated by employee ID and sorted by full name.
+- Stage B validation:
+  - One dependency-free production validator is shared by create and edit.
+  - It normalises names and codes and validates approved enums, Unicode-aware
+    lengths, non-negative quarter-hour values, hour ordering, the 168-hour
+    maximum, and notes length. Safe field-specific errors are returned.
+  - Node 24 tests import the production filter and validation modules directly;
+    there is no parallel test implementation or added test dependency.
+- Stage B mutations:
+  - Create, update, deactivate, and reactivate are Server Actions. Every exported
+    action first calls `assertMutationsAllowed()`, then independently resolves
+    authentication, active membership, and an Owner/Admin/Manager role.
+  - Organisation scope is always derived server-side. Existing employee IDs are
+    organisation-scoped lookups before a mutation and again in the update query.
+  - Expected uniqueness, constraint, RLS, and general failures are mapped to safe
+    messages; raw database errors are not returned.
+  - Successful changes revalidate employee routes. There is no delete action.
+- Stage B routes and interface:
+  - `/app/employees` is a server-rendered, URL-filtered register with responsive
+    rows, human-readable labels, empty states, and active employees by default.
+  - `/app/employees/new` and `/app/employees/[employeeId]/edit` render the shared
+    `useActionState` form for permitted roles. Read-only roles are redirected
+    safely and cross-organisation identifiers receive the same generic 404 as
+    any unavailable employee.
+  - A focused Client Component uses native browser confirmation for deactivate
+    and reactivate; deactivation wording states that the record and history are
+    retained and the employee leaves the Active list.
+  - The shared create/edit form intercepts hydrated submissions and dispatches
+    its Server Action in a React transition. This avoids React 19's automatic
+    reset of uncontrolled fields when an expected validation or safe database
+    error is returned, while successful mutations retain their redirects.
+  - The authenticated shell now links to Employees while preserving organisation,
+    signed-in identity, role, timezone, and sign-out information.
+- Preview safety:
+  - Lists, filters, and forms may render for review. Write buttons are disabled
+    and a read-only notice is shown when mutations are unavailable.
+  - Every direct Server Action call is also blocked by the existing server-side
+    mutation guard. Production still requires `APP_MUTATIONS_ENABLED=true`.
+- There are no deviations from the approved Stage B rules.
 
 ## Files changed
 
@@ -550,7 +599,46 @@ Stage A only is implemented.
   - Updates prior privilege expectations now that employee reads and the role
     helper are intentionally enabled.
 - `docs/features/employees.md`
-  - Records the actual Stage A design, evidence, limitations, and review guide.
+  - Records the actual Stage A and Stage B design, evidence, limitations, and
+    review guide.
+- `.github/workflows/ci.yml`
+  - Runs the dependency-free production filter/validation tests in CI.
+- `package.json`
+  - Adds the `test:web` Node 24 test command.
+- `apps/web/src/app/app/application-shell.tsx`
+  - Shared authenticated application shell and functional Employees navigation.
+- `apps/web/src/app/app/page.tsx`
+  - Uses the shared application shell without changing dashboard behaviour.
+- `apps/web/src/app/app/employees/actions.ts`
+  - Independently guarded create, update, deactivate, and reactivate actions.
+- `apps/web/src/app/app/employees/page.tsx`
+  - Organisation-scoped register, search, status filter, role controls, and
+    responsive list.
+- `apps/web/src/app/app/employees/new/page.tsx`
+  - Protected create route.
+- `apps/web/src/app/app/employees/[employeeId]/edit/page.tsx`
+  - Protected organisation-scoped edit route.
+- `apps/web/src/app/app/employees/employee-form.tsx`
+  - Shared create/edit form with pending and field-error feedback.
+- `apps/web/src/app/app/employees/employee-status-action.tsx`
+  - Native confirmation and guarded status submissions.
+- `apps/web/src/app/app/employees/error.tsx`
+  - Safe employee-route error boundary.
+- `apps/web/src/app/app/employees/not-found.tsx`
+  - Generic tenant-safe unavailable-employee response.
+- `apps/web/src/lib/employees/data.ts`
+  - Server-only, narrow, explicitly organisation-filtered employee reads.
+- `apps/web/src/lib/employees/filters.ts`
+  - Untrusted URL normalisation, literal LIKE escaping, deduplication, and sorting.
+- `apps/web/src/lib/employees/filters.test.mjs`
+  - Production filter tests for empty, wildcard, status, duplicate, and sorting
+    behaviour.
+- `apps/web/src/lib/employees/model.ts`
+  - Employee DTOs, defaults, labels, formatting, and management-role helper.
+- `apps/web/src/lib/employees/validation.ts`
+  - Shared production employee validation.
+- `apps/web/src/lib/employees/validation.test.mjs`
+  - Direct production-validator tests.
 
 `apps/web/src/types/database.types.ts` was regenerated and verified current but
 did not change because Stage A does not change the public table or enum shape.
@@ -559,40 +647,41 @@ did not change because Stage A does not change the public table or enum shape.
 
 | Area | Scenario | Expected result | Result |
 | --- | --- | --- | --- |
-| Authentication | Anonymous opens Employees | Redirect to login or access denied | Database pass; UI is Stage B |
-| Membership | Authenticated user without organisation opens Employees | Redirect to onboarding | Database pass; UI is Stage B |
-| Read access | Owner reads own organisation employees | Allowed | Pass — pgTAP |
-| Read access | Admin reads own organisation employees | Allowed | Pass — pgTAP |
-| Read access | Manager reads own organisation employees | Allowed | Pass — pgTAP |
-| Read access | Scheduler reads own organisation employees | Allowed | Pass — pgTAP |
-| Read access | Viewer reads own organisation employees | Allowed | Pass — pgTAP |
+| Authentication | Anonymous opens Employees | Redirect to login or access denied | Pass — local HTTP and pgTAP |
+| Membership | Authenticated user without organisation opens Employees | Redirect to onboarding | Pass — local HTTP and pgTAP |
+| Read access | Owner reads own organisation employees | Allowed | Pass — local HTTP and pgTAP |
+| Read access | Admin reads own organisation employees | Allowed | Pass — local HTTP and pgTAP |
+| Read access | Manager reads own organisation employees | Allowed | Pass — local HTTP and pgTAP |
+| Read access | Scheduler reads own organisation employees | Allowed | Pass — local HTTP and pgTAP |
+| Read access | Viewer reads own organisation employees | Allowed | Pass — local HTTP and pgTAP |
 | Isolation | User reads another organisation's employee | No row returned | Pass — pgTAP |
 | Create | Owner creates employee | Employee created in own organisation | Pass — pgTAP |
 | Create | Admin creates employee | Employee created in own organisation | Pass — pgTAP |
 | Create | Manager creates employee | Employee created in own organisation | Pass — pgTAP |
 | Create | Scheduler creates employee | Denied | Pass — pgTAP |
 | Create | Viewer creates employee | Denied | Pass — pgTAP |
-| Validation | Missing or invalid full name | Field error | Database pass; field UI is Stage B |
-| Validation | Invalid employee code | Field error | Database pass; field UI is Stage B |
+| Validation | Missing or invalid full name | Field error | Pass — Node production-module tests and database |
+| Validation | Invalid employee code | Field error | Pass — Node production-module tests and database |
 | Validation | Duplicate code in same organisation | Rejected | Pass — pgTAP |
 | Validation | Same code in another organisation | Allowed | Pass — pgTAP |
-| Validation | Invalid hour ordering | Rejected by app and database | Database pass; app is Stage B |
-| Validation | Maximum allowed hours above 168 | Rejected | Pass — pgTAP |
-| Update | Manager edits own organisation employee | Allowed | Pass — pgTAP |
-| Update | User edits another organisation employee | Denied without existence disclosure | Pass — pgTAP |
+| Validation | Invalid hour ordering | Rejected by app and database | Pass — local action, Node tests, and pgTAP |
+| Validation | Maximum allowed hours above 168 | Rejected | Pass — Node tests and pgTAP |
+| Update | Manager edits own organisation employee | Allowed | Pass — role UI, local Owner action, and pgTAP |
+| Update | User edits another organisation employee | Denied without existence disclosure | Pass — local generic 404 and pgTAP |
 | Ownership | User attempts to change organisation ID | Denied | Pass — pgTAP |
 | Profile | User attempts to change profile ID | Denied | Pass — pgTAP privilege check |
-| Status | Manager deactivates employee | Employee retained and marked inactive | Pass — pgTAP |
-| Status | Manager reactivates employee | Employee marked active | Pass — pgTAP |
+| Status | Manager deactivates employee | Employee retained and marked inactive | Pass — local action and pgTAP |
+| Status | Manager reactivates employee | Employee marked active | Pass — local action and pgTAP |
 | Delete | Any authenticated role deletes employee | Denied | Pass — pgTAP |
-| List | Default list | Active employees only | Not run |
-| List | Inactive filter | Inactive employees shown | Not run |
-| List | All filter | Active and inactive shown | Not run |
-| Search | Search by full name | Matching employees shown | Not run |
-| Search | Search by code | Matching employees shown | Not run |
-| Preview | Preview attempts create or edit | Rejected server-side | Not run |
-| Navigation | Employees navigation selected | Employee list opens | Not run |
+| List | Default list | Active employees only | Pass — local HTTP |
+| List | Inactive filter | Inactive employees shown | Pass — local HTTP |
+| List | All filter | Active and inactive shown | Pass — local HTTP |
+| Search | Search by full name | Matching employees shown | Pass — local HTTP and Node tests |
+| Search | Search by code | Matching employees shown | Pass — local HTTP and Node tests |
+| Preview | Preview attempts create or edit | Rejected server-side | Pass — local Preview simulation and direct action call |
+| Navigation | Employees navigation selected | Employee list opens | Pass — local HTTP and code review |
 | CI | pgTAP suite | All tests pass | Pass — 111 assertions across 2 files |
+| CI | Production filter/validation tests | All tests pass | Pass — 12 assertions |
 | CI | Generated database types | No generated diff | Pass — no diff |
 | CI | Next.js lint and build | Pass | Pass |
 
@@ -609,9 +698,26 @@ did not change because Stage A does not change the public table or enum shape.
   anonymous access, cross-organisation access, ownership changes, and deletes
   were denied. Deactivation retained both the employee and a dependent skill
   relationship.
-- List rendering, search, forms, application feedback, and Preview read-only
-  behavior were not run because those paths belong to Stage B and are not
-  present in this change.
+- Stage B local application verification used temporary local-only users,
+  organisations, memberships, and employees. The harness exercised 14 complete
+  request-path scenarios and removed all temporary fixtures afterward.
+- Application outcomes: unauthenticated and no-organisation redirects passed;
+  Owner, Admin, Manager, Scheduler, and Viewer list access passed; Scheduler and
+  Viewer controls and routes remained read-only; a direct Scheduler create
+  action was rejected; create and edit stored normalised values; duplicate code
+  and invalid-hour feedback were safe; and a cross-tenant employee ID returned
+  a generic 404.
+- List outcomes: active was the default; inactive and all URL filters worked;
+  deactivate moved the retained record into Inactive; reactivate restored it;
+  refreshed search/filter URLs preserved state; literal percent and underscore
+  searches worked through Supabase; and a name/code duplicate rendered once.
+- Preview outcomes: a local `VERCEL_ENV=preview` production-build simulation
+  rendered the form and read-only notice with disabled controls. Replaying its
+  Server Action form directly returned the mutation-guard error and a database
+  check confirmed no employee was inserted.
+- Native confirmation wording and accessible form behavior were verified by code
+  review. Browser automation is not installed in this repository, so the visual
+  browser prompt itself was not clicked programmatically.
 - Initial Stage A validation on 8 August 2026:
   - `npx supabase db reset --local` — passed.
   - `npx supabase gen types typescript --local` — regenerated output matches the
@@ -624,29 +730,58 @@ did not change because Stage A does not change the public table or enum shape.
   - `npm run lint:web` — passed.
   - `npm run build:web` — passed.
   - `git diff --check` — passed.
+- Stage B validation on 9 August 2026:
+  - `npm run test:web` — passed, 12 production-module assertions.
+  - local authenticated application verification — passed, 14 scenarios.
+  - `npx supabase test db` — passed, 111 assertions across 2 files.
+  - `npx supabase db lint --local --fail-on error` — passed with no schema
+    errors.
+  - `npm run lint:web` — passed.
+  - `npm run build:web` — passed on Next.js 16.2.9; all employee routes compiled.
+  - `git diff --check` — passed.
+  - Review against `origin/main` — passed after checking authentication,
+    authorisation, tenant isolation, action exposure, untrusted parameters,
+    organisation IDs, cross-tenant IDs, safe errors, Preview bypass, role-aware
+    controls, DELETE absence, and server/client data boundaries.
+- Product-owner manual UI test:
+  - The product owner completed local manual UI testing of Stage B and reported
+    it passed.
+- Final independent-review correction validation on 13 August 2026:
+  - Invalid hour ordering, invalid employee code, and a duplicate employee code
+    retained every other entered value after field-specific or safe database
+    feedback.
+  - Correcting each error and resubmitting completed successfully for the shared
+    create/edit form flow.
+  - `npm run test:web` — passed, 12 production-module assertions.
+  - `npx supabase test db` — passed, 111 assertions across 2 files.
+  - `npx supabase db lint --local --fail-on error` — passed with no schema
+    errors.
+  - `npm run lint:web` — passed.
+  - `npm run build:web` — passed on Next.js 16.2.9; all employee routes
+    compiled.
+  - `git diff --check` — passed.
 
 ## Known limitations
 
-1. Stage B is not implemented. There is no employee application read or write
-   path, including Preview mutation protection, until the separately reviewed
-   application stage is built.
+1. Stage B is implemented, committed locally, validated locally, independently
+   reviewed, and product-owner UI tested. Push, pull request, hosted CI and
+   Preview validation, merge, and Production verification remain pending.
 
-2. Stage A is implemented, committed locally, validated locally, and
-   independently reviewed. Push, pull request, CI and Preview validation, merge,
-   hosted migration deployment, and remote migration-history verification remain
-   pending.
+2. No pagination is included. The employee list is suitable for the initial organisation scale and should gain pagination before supporting very large workforces.
 
-3. No pagination is included. The employee list is suitable for the initial organisation scale and should gain pagination before supporting very large workforces.
+3. Preview and Production currently use the same hosted Supabase project. Preview is protected from application mutations but may display production data allowed by RLS to the signed-in user.
 
-4. Preview and Production currently use the same hosted Supabase project. Preview is protected from application mutations but may display production data allowed by RLS to the signed-in user.
+4. Employee notes are visible to all active organisation roles and must therefore remain operational and non-sensitive.
 
-5. Employee notes are visible to all active organisation roles and must therefore remain operational and non-sensitive.
+5. Employee deactivation does not automatically repair or remove future roster assignments. That behaviour belongs to roster management.
 
-6. Employee deactivation does not automatically repair or remove future roster assignments. That behaviour belongs to roster management.
+6. The default hour fields are treated as weekly planning values. Period-specific goals will be handled through `employee_roster_goals`.
 
-7. The default hour fields are treated as weekly planning values. Period-specific goals will be handled through `employee_roster_goals`.
+7. There is no application audit-history interface beyond existing creation and update timestamps.
 
-8. There is no application audit-history interface beyond existing creation and update timestamps.
+8. The local verification exercised role-aware rendering for all five roles and
+   direct action rejection for Scheduler. The existing Stage A pgTAP suite is the
+   automated final-boundary evidence for every role's write permissions.
 
 ## Approved decisions
 
@@ -663,8 +798,8 @@ The `Rules approved` status covers these decisions:
 
 ## Plain-English explanation
 
-Stage A establishes the protected database contract for the organisation's
-future employee register. It does not add employee pages or forms yet.
+Stage A establishes the protected database contract and Stage B supplies the
+employee pages, forms, and guarded application operations.
 
 The database now accepts valid employee records only, normalises names and
 codes, and retains deactivated employees instead of deleting them. It permits
@@ -672,9 +807,14 @@ all active organisation roles to read their own organisation's employees while
 restricting database writes to active Owners, Administrators, and Managers.
 Cross-organisation access and permanent deletion are denied.
 
-Employee Management will ultimately create the organisation's master list of people who can later be placed on rosters.
+Employee Management is the organisation's master list of people who can later
+be placed on rosters. The register opens with active employees and can be
+searched by name or code or filtered to inactive and all employees.
 
-Managers record each employee's name, optional code, employment type, preferred weekly hours, maximum allowed hours, and appetite for additional hours. Employees who leave or become temporarily unavailable as workers can be deactivated without destroying their history.
+Managers record each employee's name, optional code, employment type, preferred
+weekly hours, maximum allowed hours, and preference for additional hours.
+Employees can be deactivated without destroying their record or history and
+reactivated later.
 
 Every database request is restricted to the signed-in user's organisation. Owners, Administrators, and Managers can maintain employee records. Schedulers and Viewers can see the employee register but cannot change it.
 
@@ -682,37 +822,38 @@ This feature stores planning information only. It does not calculate wages, lega
 
 ## Code-reading guide
 
-Review Stage A in this order:
+Review Employee Management in this order:
 
 1. `docs/features/employees.md`
    - approved business rules and acceptance criteria.
 
-2. New employee database migration
+2. `supabase/migrations/20260808000000_add_employee_database_access.sql`
    - constraints, indexes, privileges, and RLS policies.
 
-3. Employee pgTAP test file
+3. `supabase/tests/database/employee_database_access.test.sql`
    - evidence that permissions and tenant isolation work.
 
 4. `apps/web/src/types/database.types.ts`
    - generated database contract used by TypeScript; regenerated with no diff.
 
-Items 5–10 below are the planned Stage B review order and are not implemented
-in this change.
+5. `apps/web/src/lib/employees/data.ts` and `filters.ts`
+   - how organisation-scoped employee data, literal search, URL normalisation,
+     deduplication, and sorting work.
 
-5. Server-only employee query/context module
-   - how organisation-scoped employee data is loaded.
-
-6. Employee validation module
+6. `apps/web/src/lib/employees/validation.ts` and production-module tests
    - how names, codes, hours, preferences, and notes are validated.
 
-7. Employee Server Actions
+7. `apps/web/src/app/app/employees/actions.ts`
    - authentication, role checks, mutation guard, and database mutations.
 
-8. `/app/employees` page
+8. `apps/web/src/app/app/employees/page.tsx`
    - employee list, search, filters, permissions, and empty state.
 
-9. Employee form routes and components
-   - create and edit behaviour.
+9. Employee form routes, `employee-form.tsx`, and
+   `employee-status-action.tsx`
+   - create/edit feedback, defaults, Preview controls, and native status
+     confirmation.
 
-10. Application navigation
-    - how users reach Employee Management.
+10. `apps/web/src/app/app/application-shell.tsx`
+    - how users reach Employee Management while retaining application identity
+      and sign-out context.
