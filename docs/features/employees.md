@@ -581,6 +581,10 @@ business rules.
     error is returned, while successful mutations retain their redirects.
   - The authenticated shell now links to Employees while preserving organisation,
     signed-in identity, role, timezone, and sign-out information.
+  - The document canvas uses the same neutral light background as the application
+    content. Root-level horizontal overscroll containment prevents a Mac trackpad
+    boundary swipe from exposing a conflicting dark template canvas without
+    suppressing vertical scrolling or concealing genuine overflow.
 - Preview safety:
   - Lists, filters, and forms may render for review. Write buttons are disabled
     and a read-only notice is shown when mutations are unavailable.
@@ -607,6 +611,9 @@ business rules.
   - Adds the `test:web` Node 24 test command.
 - `apps/web/src/app/app/application-shell.tsx`
   - Shared authenticated application shell and functional Employees navigation.
+- `apps/web/src/app/globals.css`
+  - Light document-canvas background and horizontal boundary-overscroll
+    containment for the application viewport.
 - `apps/web/src/app/app/page.tsx`
   - Uses the shared application shell without changing dashboard behaviour.
 - `apps/web/src/app/app/employees/actions.ts`
@@ -760,6 +767,17 @@ did not change because Stage A does not change the public table or enum shape.
   - `npm run build:web` — passed on Next.js 16.2.9; all employee routes
     compiled.
   - `git diff --check` — passed.
+- Root horizontal-overscroll correction validation on 13 August 2026:
+  - Chrome browser inspection at 375, 768, 1,024, 1,280, 1,440, 1,536, and
+    1,728 CSS pixels found equal document client and scroll widths with zero
+    horizontal scroll at rest.
+  - The light document canvas remained explicit when dark colour preference was
+    emulated, and a synthetic horizontal boundary gesture did not change the
+    document scroll position.
+  - The sidebar, filters, Add employee control, employee cards/table, and row
+    actions remained usable at their responsive breakpoints.
+  - `npm run test:web`, `npm run lint:web`, `npm run build:web`, and
+    `git diff --check` — passed.
 
 ## Known limitations
 
