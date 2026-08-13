@@ -14,6 +14,7 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web",
     "lint:web": "npm run lint --workspace=apps/web",
+    "test:web": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test apps/web/src/lib/employees/*.test.mjs",
     "review:pack": "bash scripts/create-review-pack.sh",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
