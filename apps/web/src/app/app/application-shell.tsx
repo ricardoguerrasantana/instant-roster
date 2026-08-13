@@ -75,7 +75,7 @@ export function ApplicationShell({
         </nav>
       </aside>
 
-      <main>
+      <main className="min-w-0">
         <header className="border-b border-gray-200 bg-white">
           <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-10">
             <div>

@@ -88,7 +88,7 @@ export default async function EmployeesPage({
 
           {canManage ? (
             <Link
-              className="rounded-lg bg-gray-950 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2"
+              className="inline-flex w-fit shrink-0 self-start items-center justify-center whitespace-nowrap rounded-lg bg-gray-950 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2"
               href="/app/employees/new"
             >
               Add employee
@@ -193,7 +193,7 @@ export default async function EmployeesPage({
           </div>
         ) : (
           <div className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="hidden grid-cols-[minmax(12rem,1.4fr)_9rem_7rem_8rem_minmax(12rem,1.2fr)_7rem_11rem] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 lg:grid">
+            <div className="hidden grid-cols-[minmax(12rem,1.4fr)_9rem_7rem_8rem_minmax(12rem,1.2fr)_7rem_11rem] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 2xl:grid">
               <span>Employee</span>
               <span>Employment</span>
               <span>Target</span>
@@ -205,7 +205,7 @@ export default async function EmployeesPage({
             <ul className="divide-y divide-gray-200">
               {employees.map((employee) => (
                 <li
-                  className="grid gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,1.4fr)_9rem_7rem_8rem_minmax(12rem,1.2fr)_7rem_11rem] lg:items-center"
+                  className="grid gap-4 px-5 py-5 sm:grid-cols-2 2xl:grid-cols-[minmax(12rem,1.4fr)_9rem_7rem_8rem_minmax(12rem,1.2fr)_7rem_11rem] 2xl:items-center"
                   key={employee.id}
                 >
                   <div>
@@ -215,34 +215,34 @@ export default async function EmployeesPage({
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold uppercase text-gray-500 lg:hidden">
+                    <span className="text-xs font-semibold uppercase text-gray-500 2xl:hidden">
                       Employment
                     </span>
-                    <p className="mt-1 text-sm lg:mt-0">
+                    <p className="mt-1 text-sm 2xl:mt-0">
                       {EMPLOYMENT_TYPE_LABELS[employee.employment_type]}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold uppercase text-gray-500 lg:hidden">
+                    <span className="text-xs font-semibold uppercase text-gray-500 2xl:hidden">
                       Target
                     </span>
-                    <p className="mt-1 text-sm lg:mt-0">
+                    <p className="mt-1 text-sm 2xl:mt-0">
                       {formatHours(employee.default_target_hours)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold uppercase text-gray-500 lg:hidden">
+                    <span className="text-xs font-semibold uppercase text-gray-500 2xl:hidden">
                       Max allowed
                     </span>
-                    <p className="mt-1 text-sm lg:mt-0">
+                    <p className="mt-1 text-sm 2xl:mt-0">
                       {formatHours(employee.default_maximum_allowed_hours)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold uppercase text-gray-500 lg:hidden">
+                    <span className="text-xs font-semibold uppercase text-gray-500 2xl:hidden">
                       Additional hours
                     </span>
-                    <p className="mt-1 text-sm lg:mt-0">
+                    <p className="mt-1 text-sm 2xl:mt-0">
                       {
                         OVERTIME_PREFERENCE_LABELS[
                           employee.default_overtime_preference

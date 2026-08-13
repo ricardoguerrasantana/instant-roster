@@ -581,6 +581,10 @@ business rules.
     error is returned, while successful mutations retain their redirects.
   - The authenticated shell now links to Employees while preserving organisation,
     signed-in identity, role, timezone, and sign-out information.
+  - The shell's main grid item may shrink within the fixed sidebar layout. The
+    Add employee control keeps intrinsic button dimensions, and the register
+    uses its existing card presentation until the 1,536-pixel desktop table has
+    enough width for all seven columns and actions.
 - Preview safety:
   - Lists, filters, and forms may render for review. Write buttons are disabled
     and a read-only notice is shown when mutations are unavailable.
@@ -760,6 +764,14 @@ did not change because Stage A does not change the public table or enum shape.
   - `npm run build:web` — passed on Next.js 16.2.9; all employee routes
     compiled.
   - `git diff --check` — passed.
+- Employee register layout correction validation on 13 August 2026:
+  - Browser inspection at 375, 768, 1,024, 1,280, and 1,536 CSS pixels found no
+    horizontal page overflow. The Add employee control, sidebar, filters,
+    employee cards/table, and actions remained visible and aligned.
+  - Viewer and Scheduler retained the read-only register without create or edit
+    controls.
+  - `npm run test:web`, `npm run lint:web`, `npm run build:web`, and
+    `git diff --check` — passed.
 
 ## Known limitations
 
